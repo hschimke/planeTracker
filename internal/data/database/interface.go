@@ -11,4 +11,6 @@ type FlightDatabase interface {
 	GetUser(model.UserId) model.User
 	DeleteUser(model.User) error
 	UpdateUser(model.User) error
+	BanUser(model.User) error
+	UnbanUser(model.User) error
 }
