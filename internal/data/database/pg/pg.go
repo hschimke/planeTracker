@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	getUserFlightsSql string = "SELECT * FROM flights WHERE user = $1"
+	getUserFlightsSql string = "SELECT origin,destination,tail,flight_date FROM flights WHERE user = $1"
 	addFlightSql      string = "INSERT INTO flights(origin,destination,tail,flight_date,user) VALUES($1,$2,$3,$4,$5)"
 	updateFlightSql   string = ""
 	deleteFlightSql   string = "DELETE FROM flights WHERE user = $1 AND origin = $2 AND destination = $3 AND tail = $4 AND flight_date = $5"
@@ -33,19 +33,32 @@ type PostgresDatabase struct {
 	db *pgxpool.Pool
 }
 
-func (p *PostgresDatabase) GetFlightsForUser(user model.User) []model.Flight {
-	//TODO implement me
-	panic("implement me")
+func (p *PostgresDatabase) GetFlightsForUser(user model.User) ([]model.Flight, error) {
+	query, queryErr := p.db.Query(context.Background(), getUserFlightsSql, user.Id)
+	if queryErr != nil {
+		return []model.Flight{}, queryErr
+	}
+	defer query.Close()
+
+	var flights []model.Flight
+	for query.Next() {
+		flight := model.Flight{
+			FlightUser: user,
+		}
+		query.Scan(&flight.Origin, &flight.Destination, &flight.TailNumber, &flight.Date)
+		flights = append(flights, flight)
+	}
+	return flights, nil
 }
 
 func (p *PostgresDatabase) AddFlight(flight model.Flight) error {
-	//TODO implement me
-	panic("implement me")
+	_, queryErr := p.db.Exec(context.Background(), addFlightSql, flight.Origin, flight.Destination, flight.TailNumber, flight.Date, flight.FlightUser.Id)
+	return queryErr
 }
 
 func (p *PostgresDatabase) DeleteFlight(flight model.Flight) error {
-	//TODO implement me
-	panic("implement me")
+	_, execErr := p.db.Exec(context.Background(), deleteFlightSql, flight.FlightUser.Id, flight.Origin, flight.Destination, flight.TailNumber, flight.Date)
+	return execErr
 }
 
 func (p *PostgresDatabase) UpdateFlight(flight model.Flight) error {
