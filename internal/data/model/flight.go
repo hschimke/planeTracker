@@ -9,5 +9,5 @@ type Flight struct {
 	Destination AirportCode
 	TailNumber  string
 	Date        time.Time
-	FlightUser  User
+	FlightUser  UserId
 }
