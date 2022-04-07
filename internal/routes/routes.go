@@ -3,11 +3,16 @@ package routes
 import (
 	"github.com/hschimke/planeTracker/internal/data/database"
 	"github.com/hschimke/planeTracker/internal/data/model"
+	"net/http"
 	"time"
 )
 
 type Server struct {
-	db *database.FlightDatabase
+	db database.FlightDatabase
+}
+
+func NewServer(db database.FlightDatabase) *Server {
+	return &Server{db: db}
 }
 
 type Flight struct {
@@ -16,3 +21,8 @@ type Flight struct {
 	TailNumber  string            `json:"tail_number,omitempty"`
 	Date        time.Time         `json:"date"`
 }
+
+func (s *Server) GetFlightsForUser(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) AddFlight(w http.ResponseWriter, r *http.Request)         {}
+func (s *Server) DeleteFlight(w http.ResponseWriter, r *http.Request)      {}
+func (s *Server) UpdateFlight(w http.ResponseWriter, r *http.Request)      {}
