@@ -18,10 +18,10 @@ func main() {
 	routerMap := routes.NewServer(flightDatabase)
 
 	router := http.NewServeMux()
-	router.HandleFunc(apiString+"getFlights", routerMap.GetFlightsForUser)
-	router.HandleFunc(apiString+"addFlight", routerMap.AddFlight)
-	router.HandleFunc(apiString+"deleteFlight", routerMap.DeleteFlight)
-	router.HandleFunc(apiString+"updateFlight", routerMap.UpdateFlight)
+	router.Handle(apiString+"getFlights", authRequiredMW(http.HandlerFunc(routerMap.GetFlightsForUser)))
+	router.Handle(apiString+"addFlight", authRequiredMW(http.HandlerFunc(routerMap.AddFlight)))
+	router.Handle(apiString+"deleteFlight", authRequiredMW(http.HandlerFunc(routerMap.DeleteFlight)))
+	router.Handle(apiString+"updateFlight", authRequiredMW(http.HandlerFunc(routerMap.UpdateFlight)))
 
 	server := &http.Server{
 		Handler:      router,

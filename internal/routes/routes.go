@@ -20,6 +20,7 @@ type Flight struct {
 	Destination model.AirportCode `json:"destination,omitempty"`
 	TailNumber  string            `json:"tail_number,omitempty"`
 	Date        time.Time         `json:"date"`
+	Email       string            `json:"email"`
 }
 
 func (s *Server) GetFlightsForUser(w http.ResponseWriter, r *http.Request) {}
