@@ -18,6 +18,7 @@ func NewServer(db database.FlightDatabase) *Server {
 }
 
 type Flight struct {
+	Id          model.FlightId    `json:"id"`
 	Origin      model.AirportCode `json:"origin,omitempty"`
 	Destination model.AirportCode `json:"destination,omitempty"`
 	TailNumber  string            `json:"tail_number,omitempty"`
@@ -50,8 +51,24 @@ func (s *Server) GetFlightsForUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	flights, getErr := s.db.GetFlightsForUser(r.Context(), email)
-	// TODO finish up here, doesn't work
+	var returnFlights []Flight
+
+	userFlights, getErr := s.db.GetFlightsForUser(r.Context(), email)
+	if getErr != nil {
+		http.Error(w, getErr.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	for _, flight := range userFlights {
+		returnFlights = append(returnFlights, Flight{
+			Id:          flight.Id,
+			Origin:      flight.Origin,
+			Destination: flight.Destination,
+			Date:        flight.Date,
+			TailNumber:  flight.TailNumber,
+			Email:       email,
+		})
+	}
 }
 func (s *Server) AddFlight(w http.ResponseWriter, r *http.Request)    {}
 func (s *Server) DeleteFlight(w http.ResponseWriter, r *http.Request) {}

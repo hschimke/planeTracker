@@ -3,9 +3,10 @@ package model
 import "time"
 
 type AirportCode string
+type FlightId string
 
 type Flight struct {
-	Id          string
+	Id          FlightId
 	Origin      AirportCode
 	Destination AirportCode
 	TailNumber  string
