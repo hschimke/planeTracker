@@ -49,13 +49,13 @@ func (p *PostgresDatabase) GetFlightsForUser(ctx context.Context, user model.Use
 	return flights, nil
 }
 
-func (p *PostgresDatabase) AddFlight(ctx context.Context, flight model.Flight) error {
+func (p *PostgresDatabase) AddFlight(ctx context.Context, flight model.Flight) (model.FlightId, error) {
 	if flight.Id == "" {
 		flight.Id = model.FlightId(uuid.New().String())
 	}
 
 	_, queryErr := p.db.Exec(ctx, addFlightSql, flight.Id, flight.Origin, flight.Destination, flight.TailNumber, flight.Date, flight.FlightUser)
-	return queryErr
+	return flight.Id, queryErr
 }
 
 func (p *PostgresDatabase) DeleteFlight(ctx context.Context, flight model.Flight) error {
