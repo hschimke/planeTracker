@@ -5,27 +5,30 @@ import (
 	"github.com/hschimke/planeTracker/internal/data/model"
 	"github.com/jackc/pgx/v4"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
+// SQL commands for CRUD operations
 const (
 	getUserFlightsSql string = "SELECT origin,destination,tail,flight_date FROM flights WHERE user = $1"
-	addFlightSql      string = "INSERT INTO flights(origin,destination,tail,flight_date,user) VALUES($1,$2,$3,$4,$5)"
-	updateFlightSql   string = "UPDATE flights SET user = $6, origin = $7, destination = $8, tail = $9, flight_date = $10 WHERE user = $1 AND origin = $2 AND destination = $3 AND tail = $4 AND flight_date = $5"
-	deleteFlightSql   string = "DELETE FROM flights WHERE user = $1 AND origin = $2 AND destination = $3 AND tail = $4 AND flight_date = $5"
+	addFlightSql      string = "INSERT INTO flights(id, origin,destination,tail,flight_date,user) VALUES($1,$2,$3,$4,$5,$6)"
+	updateFlightSql   string = "UPDATE flights SET user = $2, origin = $3, destination = $4, tail = $5, flight_date = $6 WHERE id = $1"
+	deleteFlightSql   string = "DELETE FROM flights WHERE id = $1"
 )
 
+// SQL commands to create tables and indexes (will be executed when NewPostgresDatabase() is called
 const (
-	createFlightTableSql      string = "CREATE TABLE IF NOT EXISTS flights (origin VARCHAR(10), destination VARCHAR(10), tail VARCHAR(10), flight_date DATE, user TEXT)"
-	createFlightTableIndexSql string = "CREATE INDEX IF NOT EXISTS flights_table_index ON flights (origin, destination, tail, flight_date, user)"
+	createFlightTableSql      string = "CREATE TABLE IF NOT EXISTS flights (id UUID, origin VARCHAR(10), destination VARCHAR(10), tail VARCHAR(10), flight_date DATE, user TEXT, PRIMARY KEY (id))"
+	createFlightTableIndexSql string = "CREATE INDEX IF NOT EXISTS flights_table_index ON flights (id, origin, destination, tail, flight_date, user)"
 )
 
 type PostgresDatabase struct {
 	db *pgxpool.Pool
 }
 
-func (p *PostgresDatabase) GetFlightsForUser(user model.UserId) ([]model.Flight, error) {
-	query, queryErr := p.db.Query(context.Background(), getUserFlightsSql, user)
+func (p *PostgresDatabase) GetFlightsForUser(ctx context.Context, user model.UserId) ([]model.Flight, error) {
+	query, queryErr := p.db.Query(ctx, getUserFlightsSql, user)
 	if queryErr != nil {
 		return nil, queryErr
 	}
@@ -45,19 +48,22 @@ func (p *PostgresDatabase) GetFlightsForUser(user model.UserId) ([]model.Flight,
 	return flights, nil
 }
 
-func (p *PostgresDatabase) AddFlight(flight model.Flight) error {
-	_, queryErr := p.db.Exec(context.Background(), addFlightSql, flight.Origin, flight.Destination, flight.TailNumber, flight.Date, flight.FlightUser)
+func (p *PostgresDatabase) AddFlight(ctx context.Context, flight model.Flight) error {
+	if flight.Id == "" {
+		flight.Id = uuid.New().String()
+	}
+
+	_, queryErr := p.db.Exec(ctx, addFlightSql, flight.Id, flight.Origin, flight.Destination, flight.TailNumber, flight.Date, flight.FlightUser)
 	return queryErr
 }
 
-func (p *PostgresDatabase) DeleteFlight(flight model.Flight) error {
-	_, execErr := p.db.Exec(context.Background(), deleteFlightSql, flight.FlightUser, flight.Origin, flight.Destination, flight.TailNumber, flight.Date)
+func (p *PostgresDatabase) DeleteFlight(ctx context.Context, flight model.Flight) error {
+	_, execErr := p.db.Exec(ctx, deleteFlightSql, flight.Id)
 	return execErr
 }
 
-func (p *PostgresDatabase) UpdateFlight(updated_flight model.Flight, existing_flight model.Flight) error {
-	//"UPDATE flights SET user = $6, origin = $7, destination = $8, tail = $9, flight_date = $10 WHERE user = $1 AND origin = $2 AND destination = $3 AND tail = $4 AND flight_date = $5"
-	_, execErr := p.db.Exec(context.Background(), updateFlightSql, existing_flight.FlightUser, existing_flight.Origin, existing_flight.Destination, existing_flight.TailNumber, existing_flight.Date, updated_flight.FlightUser, updated_flight.Origin, updated_flight.Destination, updated_flight.TailNumber, updated_flight.Date)
+func (p *PostgresDatabase) UpdateFlight(ctx context.Context, flight model.Flight) error {
+	_, execErr := p.db.Exec(ctx, updateFlightSql, flight.Id, flight.FlightUser, flight.Origin, flight.Destination, flight.TailNumber, flight.Date)
 	return execErr
 }
 

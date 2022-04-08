@@ -1,10 +1,13 @@
 package database
 
-import "github.com/hschimke/planeTracker/internal/data/model"
+import (
+	"context"
+	"github.com/hschimke/planeTracker/internal/data/model"
+)
 
 type FlightDatabase interface {
-	GetFlightsForUser(model.UserId) ([]model.Flight, error)
-	AddFlight(model.Flight) error
-	DeleteFlight(model.Flight) error
-	UpdateFlight(model.Flight, model.Flight) error
+	GetFlightsForUser(context.Context, model.UserId) ([]model.Flight, error)
+	AddFlight(context.Context, model.Flight) error
+	DeleteFlight(context.Context, model.Flight) error
+	UpdateFlight(context.Context, model.Flight) error
 }
