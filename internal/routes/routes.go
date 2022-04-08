@@ -3,10 +3,11 @@ package routes
 import (
 	"context"
 	"encoding/json"
-	"github.com/hschimke/planeTracker/internal/data/database"
-	"github.com/hschimke/planeTracker/internal/data/model"
 	"net/http"
 	"time"
+
+	"github.com/hschimke/planeTracker/internal/data/database"
+	"github.com/hschimke/planeTracker/internal/data/model"
 )
 
 type Server struct {
@@ -23,7 +24,7 @@ type Flight struct {
 	Destination model.AirportCode `json:"destination,omitempty"`
 	TailNumber  string            `json:"tail_number,omitempty"`
 	Date        time.Time         `json:"date"`
-	Email       string            `json:"email"`
+	Email       model.UserId      `json:"email"`
 }
 
 type GetAllRequest struct {
@@ -51,13 +52,13 @@ func (s *Server) GetFlightsForUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var returnFlights []Flight
-
 	userFlights, getErr := s.db.GetFlightsForUser(r.Context(), email)
 	if getErr != nil {
 		http.Error(w, getErr.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	returnFlights := make([]Flight, 0, len(userFlights))
 
 	for _, flight := range userFlights {
 		returnFlights = append(returnFlights, Flight{
@@ -69,7 +70,11 @@ func (s *Server) GetFlightsForUser(w http.ResponseWriter, r *http.Request) {
 			Email:       email,
 		})
 	}
+
+	w.Header().Add("ContentType", "application/json")
+	json.NewEncoder(w).Encode(&returnFlights)
 }
+
 func (s *Server) AddFlight(w http.ResponseWriter, r *http.Request)    {}
 func (s *Server) DeleteFlight(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) UpdateFlight(w http.ResponseWriter, r *http.Request) {}

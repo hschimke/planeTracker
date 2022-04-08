@@ -2,10 +2,11 @@ package pg
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 	"github.com/hschimke/planeTracker/internal/data/model"
 	"github.com/jackc/pgx/v4"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
@@ -50,7 +51,7 @@ func (p *PostgresDatabase) GetFlightsForUser(ctx context.Context, user model.Use
 
 func (p *PostgresDatabase) AddFlight(ctx context.Context, flight model.Flight) error {
 	if flight.Id == "" {
-		flight.Id = uuid.New().String()
+		flight.Id = model.FlightId(uuid.New().String())
 	}
 
 	_, queryErr := p.db.Exec(ctx, addFlightSql, flight.Id, flight.Origin, flight.Destination, flight.TailNumber, flight.Date, flight.FlightUser)

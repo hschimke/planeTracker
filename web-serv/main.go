@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/hschimke/planeTracker/internal/data/database/pg"
-	"github.com/hschimke/planeTracker/internal/routes"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/hschimke/planeTracker/internal/data/database/pg"
+	"github.com/hschimke/planeTracker/internal/routes"
 )
 
 const apiString = "/api/v1/"
