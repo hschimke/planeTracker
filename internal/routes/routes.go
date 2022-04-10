@@ -75,7 +75,7 @@ func (s *Server) GetFlightsForUser(w http.ResponseWriter, r *http.Request) {
 			Id:          flight.Id,
 			Origin:      flight.Origin,
 			Destination: flight.Destination,
-			Date:        flight.Date.String(),
+			Date:        flight.Date.Format("2006-01-02"),
 			TailNumber:  flight.TailNumber,
 			Email:       email,
 		})
@@ -145,6 +145,7 @@ func (s *Server) DeleteFlight(w http.ResponseWriter, r *http.Request) {
 	}
 
 	delErr := s.db.DeleteFlight(r.Context(), model.Flight{
+		Id:          flight.Id,
 		Origin:      flight.Origin,
 		Destination: flight.Destination,
 		Date:        date,
@@ -189,6 +190,7 @@ func (s *Server) UpdateFlight(w http.ResponseWriter, r *http.Request) {
 	}
 
 	updateErr := s.db.UpdateFlight(r.Context(), model.Flight{
+		Id:          flight.Id,
 		Origin:      flight.Origin,
 		Destination: flight.Destination,
 		Date:        date,
