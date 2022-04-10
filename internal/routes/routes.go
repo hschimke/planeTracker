@@ -20,29 +20,29 @@ func NewServer(db database.FlightDatabase) *Server {
 
 type Flight struct {
 	Id          model.FlightId    `json:"id"`
-	Origin      model.AirportCode `json:"origin,omitempty"`
-	Destination model.AirportCode `json:"destination,omitempty"`
-	TailNumber  string            `json:"tail_number,omitempty"`
-	Date        time.Time         `json:"date"`
+	Origin      model.AirportCode `json:"origin"`
+	Destination model.AirportCode `json:"destination"`
+	TailNumber  string            `json:"tail_number"`
+	Date        string            `json:"date"`
 	Email       model.UserId      `json:"email"`
 }
 
 type GetAllRequest struct {
-	User model.UserId `json:"user,omitempty"`
+	User model.UserId `json:"user"`
 }
 
 type UpdateFlightReturn AddFlightReturn
 
 type AddFlightReturn struct {
-	Id model.FlightId `json:"id,omitempty"`
+	Id model.FlightId `json:"id"`
 }
 
 type DeleteFlightReturn struct {
-	Status string `json:"status,omitempty"`
+	Status string `json:"status"`
 }
 
 func getAuthedEmail(ctx context.Context) model.UserId {
-	email := ctx.Value("email").(model.UserId)
+	email := model.UserId(ctx.Value("email").(string))
 	return email
 }
 
@@ -75,7 +75,7 @@ func (s *Server) GetFlightsForUser(w http.ResponseWriter, r *http.Request) {
 			Id:          flight.Id,
 			Origin:      flight.Origin,
 			Destination: flight.Destination,
-			Date:        flight.Date,
+			Date:        flight.Date.String(),
 			TailNumber:  flight.TailNumber,
 			Email:       email,
 		})
@@ -100,10 +100,15 @@ func (s *Server) AddFlight(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	date, dateErr := time.Parse("2006-01-02", flight.Date)
+	if dateErr != nil {
+		http.Error(w, dateErr.Error(), http.StatusInternalServerError)
+		return
+	}
 	id, addErr := s.db.AddFlight(r.Context(), model.Flight{
 		Origin:      flight.Origin,
 		Destination: flight.Destination,
-		Date:        flight.Date,
+		Date:        date,
 		FlightUser:  flight.Email,
 		TailNumber:  flight.TailNumber,
 	})
@@ -133,11 +138,16 @@ func (s *Server) DeleteFlight(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unauthed email used", http.StatusUnauthorized)
 		return
 	}
+	date, dateErr := time.Parse("2006-01-02", flight.Date)
+	if dateErr != nil {
+		http.Error(w, dateErr.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	delErr := s.db.DeleteFlight(r.Context(), model.Flight{
 		Origin:      flight.Origin,
 		Destination: flight.Destination,
-		Date:        flight.Date,
+		Date:        date,
 		FlightUser:  flight.Email,
 		TailNumber:  flight.TailNumber,
 	})
@@ -172,10 +182,16 @@ func (s *Server) UpdateFlight(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	date, dateErr := time.Parse("2006-01-02", flight.Date)
+	if dateErr != nil {
+		http.Error(w, dateErr.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	updateErr := s.db.UpdateFlight(r.Context(), model.Flight{
 		Origin:      flight.Origin,
 		Destination: flight.Destination,
-		Date:        flight.Date,
+		Date:        date,
 		FlightUser:  flight.Email,
 		TailNumber:  flight.TailNumber,
 	})
