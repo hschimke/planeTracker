@@ -2,9 +2,23 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
+
+	"google.golang.org/api/idtoken"
 )
+
+func authGoogleToken(ctx context.Context, tokenString string, audience string) (string, error) {
+	token, validateErr := idtoken.Validate(ctx, tokenString, audience)
+	if validateErr != nil {
+		return "", validateErr
+	}
+	if token.Claims["email_verified"].(string) != "true" {
+		return "", fmt.Errorf("unverified email")
+	}
+	return token.Claims["email"].(string), nil
+}
 
 func setupResponse(w *http.ResponseWriter, req *http.Request) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
@@ -27,8 +41,30 @@ func authRequiredMW(next http.Handler) http.Handler {
 		}
 		authTypeRequest := r.Header.Get("X-PlaneTracker-Auth-Type-Request")
 
+		var ctx context.Context
+
+		switch authTypeRequest {
+		case "fake":
+			ctx = context.WithValue(r.Context(), "email", "fake@fake.fake")
+		case "google":
+			// TODO add audience
+			email, authErr := authGoogleToken(r.Context(), authHeader[1], "")
+			if authErr != nil {
+				http.Error(w, "google auth failed, token appears fake", http.StatusUnauthorized)
+				return
+			}
+			ctx = context.WithValue(r.Context(), "email", email)
+		case "microsoft":
+			// TODO validate microsoft token
+			http.Error(w, "microsoft jwt not supported", http.StatusUnauthorized)
+			return
+		default:
+			http.Error(w, fmt.Sprintf("authtype: '%s' jwt not supported", authTypeRequest), http.StatusUnauthorized)
+			return
+		}
+
 		w.Header().Add("AuchCheckerVersion", authTypeRequest)
-		ctx := context.WithValue(r.Context(), "email", "fake@fake.fake")
+
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
