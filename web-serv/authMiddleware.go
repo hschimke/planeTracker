@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	"google.golang.org/api/idtoken"
@@ -14,7 +15,7 @@ func authGoogleToken(ctx context.Context, tokenString string, audience string) (
 	if validateErr != nil {
 		return "", validateErr
 	}
-	if token.Claims["email_verified"].(string) != "true" {
+	if token.Claims["email_verified"].(bool) != true {
 		return "", fmt.Errorf("unverified email")
 	}
 	return token.Claims["email"].(string), nil
@@ -48,7 +49,7 @@ func authRequiredMW(next http.Handler) http.Handler {
 			ctx = context.WithValue(r.Context(), "email", "fake@fake.fake")
 		case "google":
 			// TODO add audience
-			email, authErr := authGoogleToken(r.Context(), authHeader[1], "")
+			email, authErr := authGoogleToken(r.Context(), authHeader[1], os.Getenv("GOOGLE_CLIENT_ID"))
 			if authErr != nil {
 				http.Error(w, "google auth failed, token appears fake", http.StatusUnauthorized)
 				return

@@ -26,6 +26,7 @@ func main() {
 	router.Handle(apiString+"addFlight", authRequiredMW(http.HandlerFunc(routerMap.AddFlight)))
 	router.Handle(apiString+"deleteFlight", authRequiredMW(http.HandlerFunc(routerMap.DeleteFlight)))
 	router.Handle(apiString+"updateFlight", authRequiredMW(http.HandlerFunc(routerMap.UpdateFlight)))
+	router.Handle(apiString+"bulkAddFlights", authRequiredMW(http.HandlerFunc(routerMap.BulkAddFlights)))
 
 	address := fmt.Sprintf(":%s", serverPort)
 

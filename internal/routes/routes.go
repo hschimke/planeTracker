@@ -1,9 +1,12 @@
 package routes
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/hschimke/planeTracker/internal/data/database"
@@ -39,6 +42,16 @@ type AddFlightReturn struct {
 
 type DeleteFlightReturn struct {
 	Status string `json:"status"`
+}
+
+type BulkUploadRequest struct {
+	User       model.UserId `json:"user"`
+	Type       string       `json:"type"`
+	FlightData string       `json:"flight_data"`
+}
+
+type BuldUploadResponse struct {
+	Flights []model.FlightId `json:"flights"`
 }
 
 func getAuthedEmail(ctx context.Context) model.UserId {
@@ -122,6 +135,67 @@ func (s *Server) AddFlight(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(AddFlightReturn{
 		Id: id,
 	})
+}
+
+func (s *Server) BulkAddFlights(w http.ResponseWriter, r *http.Request) {
+	email := getAuthedEmail(r.Context())
+
+	var data BulkUploadRequest
+	var returnData BuldUploadResponse
+
+	decodeErr := json.NewDecoder(r.Body).Decode(&data)
+	if decodeErr != nil {
+		http.Error(w, decodeErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	switch data.Type {
+	case "shortcut":
+		var flights []model.Flight
+		scanner := bufio.NewScanner(strings.NewReader(data.FlightData))
+		for scanner.Scan() {
+			line := scanner.Text()
+			split := strings.Fields(line)
+			if len(split) != 4 {
+				http.Error(w, fmt.Sprintf("malformed line '%s' has %d fields instead of 4", line, len(split)), http.StatusInternalServerError)
+				return
+			}
+			flightDate, dateParseErr := time.Parse("20060102", split[3])
+			if dateParseErr != nil {
+				http.Error(w, dateParseErr.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			flights = append(flights, model.Flight{
+				TailNumber:  split[0],
+				Origin:      model.AirportCode(split[1]),
+				Destination: model.AirportCode(split[2]),
+				Date:        flightDate,
+				FlightUser:  email,
+			})
+		}
+		if scanErr := scanner.Err(); scanErr != nil {
+			http.Error(w, scanErr.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		for _, flight := range flights {
+			id, addErr := s.db.AddFlight(r.Context(), flight)
+			if addErr != nil {
+				http.Error(w, addErr.Error(), http.StatusInternalServerError)
+				return
+			}
+			returnData.Flights = append(returnData.Flights, id)
+		}
+
+		w.Header().Add("ContentType", "application/json")
+		json.NewEncoder(w).Encode(&returnData)
+	case "csv":
+		http.Error(w, "CSV bulk upload type coming soon", http.StatusInternalServerError)
+		return
+	default:
+		http.Error(w, "unknown bulk upload type", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *Server) DeleteFlight(w http.ResponseWriter, r *http.Request) {

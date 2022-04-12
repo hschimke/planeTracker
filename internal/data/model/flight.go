@@ -12,4 +12,5 @@ type Flight struct {
 	TailNumber  string
 	Date        time.Time
 	FlightUser  UserId
+	DateAdded   time.Time
 }
