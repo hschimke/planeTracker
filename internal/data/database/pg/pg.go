@@ -2,6 +2,7 @@ package pg
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,16 +14,16 @@ import (
 
 // SQL commands for CRUD operations
 const (
-	getUserFlightsSql string = "SELECT origin, destination, tail, flight_date, added FROM flights WHERE user = $1"
-	addFlightSql      string = "INSERT INTO flights(id, origin, destination, tail, flight_date, user, added) VALUES($1,$2,$3,$4,$5,$6,$7)"
-	updateFlightSql   string = "UPDATE flights SET user = $2, origin = $3, destination = $4, tail = $5, flight_date = $6 WHERE id = $1"
+	getUserFlightsSql string = "SELECT id, origin, destination, tail, flight_date, added FROM flights WHERE user_id = $1 ORDER BY flight_date DESC, added DESC"
+	addFlightSql      string = "INSERT INTO flights(id, origin, destination, tail, flight_date, user_id, added) VALUES($1,$2,$3,$4,$5,$6,$7)"
+	updateFlightSql   string = "UPDATE flights SET user_id = $2, origin = $3, destination = $4, tail = $5, flight_date = $6 WHERE id = $1"
 	deleteFlightSql   string = "DELETE FROM flights WHERE id = $1"
 )
 
 // SQL commands to create tables and indexes (will be executed when NewPostgresDatabase() is called
 const (
-	createFlightTableSql      string = "CREATE TABLE IF NOT EXISTS flights (id UUID, origin VARCHAR(10), destination VARCHAR(10), tail VARCHAR(10), flight_date DATE, added DATETIME, user TEXT, PRIMARY KEY (id))"
-	createFlightTableIndexSql string = "CREATE INDEX IF NOT EXISTS flights_table_index ON flights (id, origin, destination, tail, flight_date, user, added)"
+	createFlightTableSql      string = "CREATE TABLE IF NOT EXISTS flights (id VARCHAR(50), origin VARCHAR(10), destination VARCHAR(10), tail VARCHAR(10), flight_date DATE, added TIMESTAMP WITH TIME ZONE, user_id TEXT, PRIMARY KEY (id))"
+	createFlightTableIndexSql string = "CREATE INDEX IF NOT EXISTS flights_table_index ON flights (id, origin, destination, tail, flight_date, user_id, added)"
 )
 
 type PostgresDatabase struct {
@@ -41,7 +42,7 @@ func (p *PostgresDatabase) GetFlightsForUser(ctx context.Context, user model.Use
 		flight := model.Flight{
 			FlightUser: user,
 		}
-		scanErr := query.Scan(&flight.Origin, &flight.Destination, &flight.TailNumber, &flight.Date, &flight.DateAdded)
+		scanErr := query.Scan(&flight.Id, &flight.Origin, &flight.Destination, &flight.TailNumber, &flight.Date, &flight.DateAdded)
 		if scanErr != nil {
 			return nil, scanErr
 		}
@@ -72,6 +73,7 @@ func (p *PostgresDatabase) UpdateFlight(ctx context.Context, flight model.Flight
 func NewPostgresDatabase(connectionString string) *PostgresDatabase {
 	pool, poolErr := pgxpool.Connect(context.Background(), connectionString)
 	if poolErr != nil {
+		fmt.Println(poolErr.Error())
 		panic(poolErr.Error())
 	}
 	if setupErr := setupDatabase(pool); setupErr != nil {

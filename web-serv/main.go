@@ -7,18 +7,18 @@ import (
 	"os"
 	"time"
 
-	"github.com/hschimke/planeTracker/internal/data/database/mem"
+	"github.com/hschimke/planeTracker/internal/data/database/pg"
 	"github.com/hschimke/planeTracker/internal/routes"
 )
 
 const apiString = "/api/v1/"
 
 func main() {
-	//dbString := os.Getenv("CONNECTION_STRING")
+	dbString := os.Getenv("CONNECTION_STRING")
 	serverPort := os.Getenv("SERVER_PORT")
 
-	//flightDatabase := pg.NewPostgresDatabase(dbString)
-	flightDatabase := &mem.MemoryDatabase{}
+	flightDatabase := pg.NewPostgresDatabase(dbString)
+	//flightDatabase := &mem.MemoryDatabase{}
 	routerMap := routes.NewServer(flightDatabase)
 
 	router := http.NewServeMux()
