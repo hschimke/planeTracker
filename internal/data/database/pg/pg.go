@@ -13,8 +13,8 @@ import (
 
 // SQL commands for CRUD operations
 const (
-	getUserFlightsSql string = "SELECT origin,destination,tail,flight_date,added FROM flights WHERE user = $1"
-	addFlightSql      string = "INSERT INTO flights(id, origin,destination,tail,flight_date,user,added) VALUES($1,$2,$3,$4,$5,$6,$7)"
+	getUserFlightsSql string = "SELECT origin, destination, tail, flight_date, added FROM flights WHERE user = $1"
+	addFlightSql      string = "INSERT INTO flights(id, origin, destination, tail, flight_date, user, added) VALUES($1,$2,$3,$4,$5,$6,$7)"
 	updateFlightSql   string = "UPDATE flights SET user = $2, origin = $3, destination = $4, tail = $5, flight_date = $6 WHERE id = $1"
 	deleteFlightSql   string = "DELETE FROM flights WHERE id = $1"
 )
