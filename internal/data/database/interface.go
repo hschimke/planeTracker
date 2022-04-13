@@ -11,4 +11,5 @@ type FlightDatabase interface {
 	AddFlight(context.Context, model.Flight) (model.FlightId, error)
 	DeleteFlight(context.Context, model.Flight) error
 	UpdateFlight(context.Context, model.Flight) error
+	GetTailDetails(context.Context, model.PlaneTail, model.UserId) (model.PlaneDetail, error)
 }

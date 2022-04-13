@@ -25,7 +25,7 @@ type Flight struct {
 	Id          model.FlightId    `json:"id"`
 	Origin      model.AirportCode `json:"origin"`
 	Destination model.AirportCode `json:"destination"`
-	TailNumber  string            `json:"tail_number"`
+	TailNumber  model.PlaneTail   `json:"tail_number"`
 	Date        string            `json:"date"`
 	Email       model.UserId      `json:"email"`
 }
@@ -52,6 +52,23 @@ type BulkUploadRequest struct {
 
 type BuldUploadResponse struct {
 	Flights []model.FlightId `json:"flights"`
+}
+
+type PlaneDetailRequest struct {
+	Tail model.PlaneTail `json:"tail"`
+	User model.UserId    `json:"user"`
+}
+
+type PlaneDetailResponse struct {
+	Tail    model.PlaneTail `json:"tail"`
+	User    model.UserId    `json:"user"`
+	Flights []Flight        `json:"flights"`
+	Seen    uint64          `json:"seen"`
+	Routes  []struct {
+		Origin      model.AirportCode `json:"origin"`
+		Destination model.AirportCode `json:"destination"`
+		Count       uint64            `json:"count"`
+	} `json:"routes"`
 }
 
 func getAuthedEmail(ctx context.Context) model.UserId {
@@ -166,7 +183,7 @@ func (s *Server) BulkAddFlights(w http.ResponseWriter, r *http.Request) {
 			}
 
 			flights = append(flights, model.Flight{
-				TailNumber:  split[0],
+				TailNumber:  model.PlaneTail(split[0]),
 				Origin:      model.AirportCode(split[1]),
 				Destination: model.AirportCode(split[2]),
 				Date:        flightDate,
@@ -281,4 +298,45 @@ func (s *Server) UpdateFlight(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(UpdateFlightReturn{
 		Id: flight.Id,
 	})
+}
+
+func (s *Server) GetPlaneDetail(w http.ResponseWriter, r *http.Request) {
+	email := getAuthedEmail(r.Context())
+
+	var request PlaneDetailRequest
+	decodeErr := json.NewDecoder(r.Body).Decode(&request)
+	if decodeErr != nil {
+		http.Error(w, decodeErr.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	details, detailsErr := s.db.GetTailDetails(r.Context(), request.Tail, request.User)
+	if detailsErr != nil {
+		http.Error(w, detailsErr.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := PlaneDetailResponse{
+		Tail: details.Tail,
+		User: details.User,
+		Seen: details.Seen,
+		Routes: []struct {
+			Origin      model.AirportCode "json:\"origin\""
+			Destination model.AirportCode "json:\"destination\""
+			Count       uint64            "json:\"count\""
+		}(details.Routes),
+	}
+
+	for _, flight := range details.Flights {
+		response.Flights = append(response.Flights, Flight{
+			Id:          flight.Id,
+			Origin:      flight.Origin,
+			Destination: flight.Destination,
+			Date:        flight.Date.Format("2006-01-02"),
+			TailNumber:  flight.TailNumber,
+			Email:       email,
+		})
+	}
+
+	json.NewEncoder(w).Encode(response)
 }

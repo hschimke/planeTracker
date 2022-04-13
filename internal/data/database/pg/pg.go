@@ -20,6 +20,12 @@ const (
 	deleteFlightSql   string = "DELETE FROM flights WHERE id = $1"
 )
 
+// SQL commands to fetch plane details
+const (
+	getPlaneFlightsForUserSql string = "SELECT id, origin, destination, tail, flight_date, added FROM flights WHERE user_id = $1 AND tail = $2 ORDER BY flight_date DESC, added DESC"
+	getPlaneRoutesSql         string = "SELECT origin, destination, count(*) AS total FROM flights WHERE user_id = $1 AND tail = $2 GROUP BY origin, destination"
+)
+
 // SQL commands to create tables and indexes (will be executed when NewPostgresDatabase() is called
 const (
 	createFlightTableSql      string = "CREATE TABLE IF NOT EXISTS flights (id VARCHAR(50), origin VARCHAR(10), destination VARCHAR(10), tail VARCHAR(10), flight_date DATE, added TIMESTAMP WITH TIME ZONE, user_id TEXT, PRIMARY KEY (id))"
@@ -68,6 +74,56 @@ func (p *PostgresDatabase) DeleteFlight(ctx context.Context, flight model.Flight
 func (p *PostgresDatabase) UpdateFlight(ctx context.Context, flight model.Flight) error {
 	_, execErr := p.db.Exec(ctx, updateFlightSql, flight.Id, flight.FlightUser, flight.Origin, flight.Destination, flight.TailNumber, flight.Date)
 	return execErr
+}
+
+func (p *PostgresDatabase) GetTailDetails(ctx context.Context, tail model.PlaneTail, user model.UserId) (model.PlaneDetail, error) {
+	queryFlights, queryErr := p.db.Query(ctx, getPlaneFlightsForUserSql, user, tail)
+	if queryErr != nil {
+		return model.PlaneDetail{}, queryErr
+	}
+	defer queryFlights.Close()
+
+	var flights []model.Flight
+	for queryFlights.Next() {
+		flight := model.Flight{
+			FlightUser: user,
+		}
+		scanErr := queryFlights.Scan(&flight.Id, &flight.Origin, &flight.Destination, &flight.TailNumber, &flight.Date, &flight.DateAdded)
+		if scanErr != nil {
+			return model.PlaneDetail{}, scanErr
+		}
+		flights = append(flights, flight)
+	}
+
+	queryRoutes, routesErr := p.db.Query(ctx, getPlaneRoutesSql, user, tail)
+	if routesErr != nil {
+		return model.PlaneDetail{}, routesErr
+	}
+	defer queryRoutes.Close()
+
+	type statRow struct {
+		Origin      model.AirportCode
+		Destination model.AirportCode
+		Count       uint64
+	}
+
+	returnData := model.PlaneDetail{
+		Tail:    tail,
+		User:    user,
+		Flights: flights,
+	}
+
+	for queryRoutes.Next() {
+		var row statRow
+		scanErr := queryRoutes.Scan(&row.Origin, &row.Destination, &row.Count)
+		if scanErr != nil {
+			return model.PlaneDetail{}, scanErr
+		}
+		returnData.Seen += row.Count
+		returnData.Routes = append(returnData.Routes, row)
+	}
+
+	return returnData, nil
 }
 
 func NewPostgresDatabase(connectionString string) *PostgresDatabase {
