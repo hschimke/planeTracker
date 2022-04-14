@@ -62,6 +62,8 @@ func (p *PostgresDatabase) AddFlight(ctx context.Context, flight model.Flight) (
 		flight.Id = model.FlightId(uuid.New().String())
 	}
 
+	flight.Normalize()
+
 	_, queryErr := p.db.Exec(ctx, addFlightSql, flight.Id, flight.Origin, flight.Destination, flight.TailNumber, flight.Date, flight.FlightUser, time.Now())
 	return flight.Id, queryErr
 }

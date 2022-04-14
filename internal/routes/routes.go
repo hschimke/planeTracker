@@ -103,8 +103,8 @@ func (s *Server) GetFlightsForUser(w http.ResponseWriter, r *http.Request) {
 	for _, flight := range userFlights {
 		returnFlights = append(returnFlights, Flight{
 			Id:          flight.Id,
-			Origin:      flight.Origin,
-			Destination: flight.Destination,
+			Origin:      flight.Origin.ToIATA(),
+			Destination: flight.Destination.ToIATA(),
 			Date:        flight.Date.Format("2006-01-02"),
 			TailNumber:  flight.TailNumber,
 			Email:       email,
@@ -330,8 +330,8 @@ func (s *Server) GetPlaneDetail(w http.ResponseWriter, r *http.Request) {
 	for _, flight := range details.Flights {
 		response.Flights = append(response.Flights, Flight{
 			Id:          flight.Id,
-			Origin:      flight.Origin,
-			Destination: flight.Destination,
+			Origin:      flight.Origin.ToIATA(),
+			Destination: flight.Destination.ToIATA(),
 			Date:        flight.Date.Format("2006-01-02"),
 			TailNumber:  flight.TailNumber,
 			Email:       email,
