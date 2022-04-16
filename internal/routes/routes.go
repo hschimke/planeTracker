@@ -310,6 +310,11 @@ func (s *Server) GetPlaneDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if request.User != email {
+		http.Error(w, "unauthed email used", http.StatusUnauthorized)
+		return
+	}
+
 	details, detailsErr := s.db.GetTailDetails(r.Context(), request.Tail, request.User)
 	if detailsErr != nil {
 		http.Error(w, detailsErr.Error(), http.StatusInternalServerError)
