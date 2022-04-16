@@ -14,7 +14,7 @@ type FlightDatabase interface {
 	GetTailDetails(context.Context, model.PlaneTail, model.UserId) (model.PlaneDetail, error)
 
 	GetPassengersForUser(context.Context, model.UserId) ([]model.Passenger, error)
-	AddPassengerForUser(context.Context, model.UserId, model.UserId) error
+	AddPassengerForUser(context.Context, model.UserId, model.Passenger) error
 	RemovePassengerForUser(context.Context, model.UserId, model.UserId) error
 	SetDefaultStatusForPassengerOfUeser(context.Context, model.UserId, model.UserId, bool) error
 	AddPassengerToFlight(context.Context, model.FlightId, model.UserId) error
