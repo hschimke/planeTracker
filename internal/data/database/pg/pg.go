@@ -37,6 +37,12 @@ const (
 	createFlightPassengerIndexSql string = "CREATE INDEX IFN OT EXISTS flight_passengers_index ON flight_passengers (flight_id, passenger_id)"
 )
 
+// SQL commands to handle passengers for adding/removing flights
+const (
+	getDefaultPassengersForUserSql         string = "SELECT passenger_id FROM passengers WHERE user_id = $1 AND default_passenger = true"
+	removeAllPassengersForDeletedFlightSql string = "DELETE FROM flight_passengers WHERE flight_id = $1"
+)
+
 type PostgresDatabase struct {
 	db *pgxpool.Pool
 }
@@ -69,15 +75,44 @@ func (p *PostgresDatabase) AddFlight(ctx context.Context, flight model.Flight) (
 
 	flight.Normalize()
 
-	// TODO Add default passengers for this user
+	// Add default passengers for this user
 
 	_, queryErr := p.db.Exec(ctx, addFlightSql, flight.Id, flight.Origin, flight.Destination, flight.TailNumber, flight.Date, flight.FlightUser, time.Now())
-	return flight.Id, queryErr
+	if queryErr != nil {
+		return "", queryErr
+	}
+
+	defaultUsersQuery, duqErr := p.db.Query(ctx, getDefaultPassengersForUserSql, flight.FlightUser)
+	if duqErr != nil {
+		return "", duqErr
+	}
+	defer defaultUsersQuery.Close()
+
+	for defaultUsersQuery.Next() {
+		var passenger_id model.UserId
+		sErr := defaultUsersQuery.Scan(&passenger_id)
+		if sErr != nil {
+			return "", sErr
+		}
+		pAddErr := p.AddPassengerToFlight(ctx, flight.Id, flight.FlightUser, passenger_id)
+		if pAddErr != nil {
+			return "", pAddErr
+		}
+	}
+
+	return flight.Id, nil
 }
 
 func (p *PostgresDatabase) DeleteFlight(ctx context.Context, flight model.Flight) error {
 	_, execErr := p.db.Exec(ctx, deleteFlightSql, flight.Id)
-	return execErr
+	if execErr != nil {
+		return execErr
+	}
+	_, passengerRemoveErr := p.db.Exec(ctx, removeAllPassengersForDeletedFlightSql, flight.Id)
+	if passengerRemoveErr != nil {
+		return passengerRemoveErr
+	}
+	return nil
 }
 
 func (p *PostgresDatabase) UpdateFlight(ctx context.Context, flight model.Flight) error {
