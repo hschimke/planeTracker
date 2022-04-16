@@ -34,7 +34,7 @@ const (
 	createPassengersTableSql string = "CREATE TABLE IF NOT EXISTS passengers (user_id TEXT, passenger_id TEXT, default_passenger BOOLEAN, PRIMARY KEY (user_id, passenger_id))"
 
 	createFlightPassengerTableSql string = "CREATE TABLE IF NOT EXISTS flight_passengers (flight_id VARCHAR(50), passenger_id TEXT)"
-	createFlightPassengerIndexSql string = "CREATE INDEX IFN OT EXISTS flight_passengers_index ON flight_passengers (flight_id, passenger_id)"
+	createFlightPassengerIndexSql string = "CREATE INDEX IF NOT EXISTS flight_passengers_index ON flight_passengers (flight_id, passenger_id)"
 )
 
 // SQL commands to handle passengers for adding/removing flights
