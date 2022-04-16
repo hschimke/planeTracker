@@ -16,8 +16,8 @@ type FlightDatabase interface {
 	GetPassengersForUser(context.Context, model.UserId) ([]model.Passenger, error)
 	AddPassengerForUser(context.Context, model.UserId, model.Passenger) error
 	RemovePassengerForUser(context.Context, model.UserId, model.UserId) error
-	SetDefaultStatusForPassengerOfUeser(context.Context, model.UserId, model.UserId, bool) error
-	AddPassengerToFlight(context.Context, model.FlightId, model.UserId) error
-	RemovePassengerFromFlight(context.Context, model.FlightId, model.UserId) error
+	SetDefaultStatusForPassengerOfUser(context.Context, model.UserId, model.UserId, bool) error
+	AddPassengerToFlight(context.Context, model.FlightId, model.UserId, model.UserId) error
+	RemovePassengerFromFlight(context.Context, model.FlightId, model.UserId, model.UserId) error
 	GetFlightsAsPassenger(context.Context, model.UserId) ([]model.Flight, error)
 }
