@@ -30,6 +30,11 @@ const (
 const (
 	createFlightTableSql      string = "CREATE TABLE IF NOT EXISTS flights (id VARCHAR(50), origin VARCHAR(10), destination VARCHAR(10), tail VARCHAR(10), flight_date DATE, added TIMESTAMP WITH TIME ZONE, user_id TEXT, PRIMARY KEY (id))"
 	createFlightTableIndexSql string = "CREATE INDEX IF NOT EXISTS flights_table_index ON flights (id, origin, destination, tail, flight_date, user_id, added)"
+
+	createPassengersTableSql string = "CREATE TABLE IF NOT EXISTS passengers (user_id TEXT, passenger_id TEXT, default_passenger BOOLEAN, PRIMARY KEY (user_id, passenger_id))"
+
+	createFlightPassengerTableSql string = "CREATE TABLE IF NOT EXISTS flight_passengers (flight_id VARCHAR(50), passenger_id TEXT)"
+	createFlightPassengerIndexSql string = "CREATE INDEX IFN OT EXISTS flight_passengers_index ON flight_passengers (flight_id, passenger_id)"
 )
 
 type PostgresDatabase struct {
@@ -63,6 +68,8 @@ func (p *PostgresDatabase) AddFlight(ctx context.Context, flight model.Flight) (
 	}
 
 	flight.Normalize()
+
+	// TODO Add default passengers for this user
 
 	_, queryErr := p.db.Exec(ctx, addFlightSql, flight.Id, flight.Origin, flight.Destination, flight.TailNumber, flight.Date, flight.FlightUser, time.Now())
 	return flight.Id, queryErr
@@ -146,6 +153,9 @@ func setupDatabase(pool *pgxpool.Pool) error {
 	dbSetupBatch := &pgx.Batch{}
 	dbSetupBatch.Queue(createFlightTableSql)
 	dbSetupBatch.Queue(createFlightTableIndexSql)
+	dbSetupBatch.Queue(createPassengersTableSql)
+	dbSetupBatch.Queue(createFlightPassengerTableSql)
+	dbSetupBatch.Queue(createFlightPassengerIndexSql)
 
 	results := pool.SendBatch(context.Background(), dbSetupBatch)
 	return results.Close()
