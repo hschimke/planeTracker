@@ -12,4 +12,12 @@ type FlightDatabase interface {
 	DeleteFlight(context.Context, model.Flight) error
 	UpdateFlight(context.Context, model.Flight) error
 	GetTailDetails(context.Context, model.PlaneTail, model.UserId) (model.PlaneDetail, error)
+
+	GetPassengersForUser(context.Context, model.UserId) ([]model.Passenger, error)
+	AddPassengerForUser(context.Context, model.UserId, model.UserId) error
+	RemovePassengerForUser(context.Context, model.UserId, model.UserId) error
+	SetDefaultStatusForPassengerOfUeser(context.Context, model.UserId, model.UserId, bool) error
+	AddPassengerToFlight(context.Context, model.FlightId, model.UserId) error
+	RemovePassengerFromFlight(context.Context, model.FlightId, model.UserId) error
+	GetFlightsAsPassenger(context.Context, model.UserId) ([]model.Flight, error)
 }
