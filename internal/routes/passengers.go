@@ -7,23 +7,6 @@ import (
 	"github.com/hschimke/planeTracker/internal/data/model"
 )
 
-/*
-func (s *Server) AddFlight(w http.ResponseWriter, r *http.Request) {}
-	email := getAuthedEmail(r.Context())
-
-	var flight AddFlightRequest
-	decodeErr := json.NewDecoder(r.Body).Decode(&flight)
-	if decodeErr != nil {
-		http.Error(w, decodeErr.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if flight.Email != email {
-		http.Error(w, "unauthed email used", http.StatusUnauthorized)
-		return
-	}
-*/
-
 type statusResponse struct {
 	Status bool `json:"status"`
 }
