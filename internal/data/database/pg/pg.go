@@ -68,7 +68,7 @@ func (p *PostgresDatabase) GetFlightsForUser(ctx context.Context, user model.Use
 	return flights, nil
 }
 
-func (p *PostgresDatabase) AddFlight(ctx context.Context, flight model.Flight) (model.FlightId, error) {
+func (p *PostgresDatabase) AddFlight(ctx context.Context, flight model.Flight, includeDefaultPassengers bool) (model.FlightId, error) {
 	if flight.Id == "" {
 		flight.Id = model.FlightId(uuid.New().String())
 	}
@@ -82,21 +82,23 @@ func (p *PostgresDatabase) AddFlight(ctx context.Context, flight model.Flight) (
 		return "", queryErr
 	}
 
-	defaultUsersQuery, duqErr := p.db.Query(ctx, getDefaultPassengersForUserSql, flight.FlightUser)
-	if duqErr != nil {
-		return "", duqErr
-	}
-	defer defaultUsersQuery.Close()
-
-	for defaultUsersQuery.Next() {
-		var passenger_id model.UserId
-		sErr := defaultUsersQuery.Scan(&passenger_id)
-		if sErr != nil {
-			return "", sErr
+	if includeDefaultPassengers {
+		defaultUsersQuery, duqErr := p.db.Query(ctx, getDefaultPassengersForUserSql, flight.FlightUser)
+		if duqErr != nil {
+			return "", duqErr
 		}
-		pAddErr := p.AddPassengerToFlight(ctx, flight.Id, flight.FlightUser, passenger_id)
-		if pAddErr != nil {
-			return "", pAddErr
+		defer defaultUsersQuery.Close()
+
+		for defaultUsersQuery.Next() {
+			var passenger_id model.UserId
+			sErr := defaultUsersQuery.Scan(&passenger_id)
+			if sErr != nil {
+				return "", sErr
+			}
+			pAddErr := p.AddPassengerToFlight(ctx, flight.Id, flight.FlightUser, passenger_id)
+			if pAddErr != nil {
+				return "", pAddErr
+			}
 		}
 	}
 

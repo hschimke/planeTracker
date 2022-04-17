@@ -8,7 +8,7 @@ import (
 
 type FlightDatabase interface {
 	GetFlightsForUser(context.Context, model.UserId) ([]model.Flight, error)
-	AddFlight(context.Context, model.Flight) (model.FlightId, error)
+	AddFlight(context.Context, model.Flight, bool) (model.FlightId, error)
 	DeleteFlight(context.Context, model.Flight) error
 	UpdateFlight(context.Context, model.Flight) error
 	GetTailDetails(context.Context, model.PlaneTail, model.UserId) (model.PlaneDetail, error)

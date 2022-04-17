@@ -36,6 +36,11 @@ type GetAllRequest struct {
 
 type UpdateFlightReturn AddFlightReturn
 
+type AddFlightRequest struct {
+	Flight
+	IncludeDefaultPassengers bool `json:"include_default_passengers"`
+}
+
 type AddFlightReturn struct {
 	Id model.FlightId `json:"id"`
 }
@@ -45,9 +50,10 @@ type DeleteFlightReturn struct {
 }
 
 type BulkUploadRequest struct {
-	User       model.UserId `json:"user"`
-	Type       string       `json:"type"`
-	FlightData string       `json:"flight_data"`
+	User                     model.UserId `json:"user"`
+	Type                     string       `json:"type"`
+	IncludeDefaultPassengers bool         `json:"include_default_passengers"`
+	FlightData               string       `json:"flight_data"`
 }
 
 type BuldUploadResponse struct {
@@ -118,7 +124,7 @@ func (s *Server) GetFlightsForUser(w http.ResponseWriter, r *http.Request) {
 func (s *Server) AddFlight(w http.ResponseWriter, r *http.Request) {
 	email := getAuthedEmail(r.Context())
 
-	var flight Flight
+	var flight AddFlightRequest
 	decodeErr := json.NewDecoder(r.Body).Decode(&flight)
 	if decodeErr != nil {
 		http.Error(w, decodeErr.Error(), http.StatusInternalServerError)
@@ -141,7 +147,7 @@ func (s *Server) AddFlight(w http.ResponseWriter, r *http.Request) {
 		Date:        date,
 		FlightUser:  flight.Email,
 		TailNumber:  flight.TailNumber,
-	})
+	}, flight.IncludeDefaultPassengers)
 
 	if addErr != nil {
 		http.Error(w, addErr.Error(), http.StatusInternalServerError)
@@ -196,7 +202,7 @@ func (s *Server) BulkAddFlights(w http.ResponseWriter, r *http.Request) {
 		}
 
 		for _, flight := range flights {
-			id, addErr := s.db.AddFlight(r.Context(), flight)
+			id, addErr := s.db.AddFlight(r.Context(), flight, data.IncludeDefaultPassengers)
 			if addErr != nil {
 				http.Error(w, addErr.Error(), http.StatusInternalServerError)
 				return
