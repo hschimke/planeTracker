@@ -22,12 +22,13 @@ func NewServer(db database.FlightDatabase) *Server {
 }
 
 type Flight struct {
-	Id          model.FlightId    `json:"id"`
-	Origin      model.AirportCode `json:"origin"`
-	Destination model.AirportCode `json:"destination"`
-	TailNumber  model.PlaneTail   `json:"tail_number"`
-	Date        string            `json:"date"`
-	Email       model.UserId      `json:"email"`
+	Id             model.FlightId    `json:"id"`
+	Origin         model.AirportCode `json:"origin"`
+	Destination    model.AirportCode `json:"destination"`
+	TailNumber     model.PlaneTail   `json:"tail_number"`
+	Date           string            `json:"date"`
+	Email          model.UserId      `json:"email"`
+	PassengerCount uint8             `json:"passenger_count"`
 }
 
 type GetAllRequest struct {
@@ -108,12 +109,13 @@ func (s *Server) GetFlightsForUser(w http.ResponseWriter, r *http.Request) {
 
 	for _, flight := range userFlights {
 		returnFlights = append(returnFlights, Flight{
-			Id:          flight.Id,
-			Origin:      flight.Origin.ToIATA(),
-			Destination: flight.Destination.ToIATA(),
-			Date:        flight.Date.Format("2006-01-02"),
-			TailNumber:  flight.TailNumber,
-			Email:       email,
+			Id:             flight.Id,
+			Origin:         flight.Origin.ToIATA(),
+			Destination:    flight.Destination.ToIATA(),
+			Date:           flight.Date.Format("2006-01-02"),
+			TailNumber:     flight.TailNumber,
+			Email:          email,
+			PassengerCount: flight.PassengerCount,
 		})
 	}
 

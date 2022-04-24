@@ -12,13 +12,14 @@ type FlightId string
 type PlaneTail string
 
 type Flight struct {
-	Id          FlightId
-	Origin      AirportCode
-	Destination AirportCode
-	TailNumber  PlaneTail
-	Date        time.Time
-	FlightUser  UserId
-	DateAdded   time.Time
+	Id             FlightId
+	Origin         AirportCode
+	Destination    AirportCode
+	TailNumber     PlaneTail
+	Date           time.Time
+	FlightUser     UserId
+	DateAdded      time.Time
+	PassengerCount uint8
 }
 
 type PlaneDetail struct {
