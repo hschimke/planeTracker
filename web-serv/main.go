@@ -39,6 +39,7 @@ func main() {
 	router.Handle(apiString+"addPassengerToFlight", authRequiredMW(http.HandlerFunc(routerMap.AddPassengerToFlight)))
 	router.Handle(apiString+"removePassengerFromFlight", authRequiredMW(http.HandlerFunc(routerMap.RemovePassengerFromFlight)))
 	router.Handle(apiString+"getFlightsAsPassenger", authRequiredMW(http.HandlerFunc(routerMap.GetFlightsAsPassenger)))
+	router.Handle(apiString+"getPassengersForFlight", authRequiredMW(http.HandlerFunc(routerMap.GetPassengersForFlight)))
 
 	address := fmt.Sprintf(":%s", serverPort)
 

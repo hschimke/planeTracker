@@ -259,3 +259,37 @@ func (s *Server) GetFlightsAsPassenger(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("ContentType", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
+
+type getPassengersForFlightRequest struct {
+	Flight model.FlightId `json:"flight"`
+	User   model.UserId   `json:"user"`
+}
+type getPassengersForFlightResponse struct {
+	Passengers []model.UserId `json:"passengers"`
+}
+
+func (s *Server) GetPassengersForFlight(w http.ResponseWriter, r *http.Request) {
+	email := getAuthedEmail(r.Context())
+
+	var request getPassengersForFlightRequest
+	decodeErr := json.NewDecoder(r.Body).Decode(&request)
+	if decodeErr != nil {
+		http.Error(w, decodeErr.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if request.User != email {
+		http.Error(w, "unauthed email used", http.StatusUnauthorized)
+		return
+	}
+
+	passengers, dbErr := s.db.GetPassengersForFlightUser(r.Context(), request.Flight, request.User)
+	if dbErr != nil {
+		http.Error(w, dbErr.Error(), http.StatusInternalServerError)
+	}
+
+	w.Header().Add("ContentType", "application/json")
+	json.NewEncoder(w).Encode(getPassengersForFlightResponse{
+		Passengers: passengers,
+	})
+}

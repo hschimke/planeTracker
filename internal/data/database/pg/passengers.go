@@ -15,6 +15,7 @@ const (
 	addPassengerToFlightSql      string = "INSERT INTO flight_passengers (flight_id, passenger_id) VALUES ($1, $2)"
 	removePassengerFromFlightSql string = "DELETE FROM flight_passengers WHERE flight_id = $1 AND passenger_id = $2"
 	getFlightsAsPassengerSql     string = "SELECT id, origin, destination, tail, flight_date, added FROM flights WHERE id IN (SELECT flight_id FROM flight_passengers WHERE passenger_id = $1)"
+	getPassengersForFlightUser   string = "SELECT passenger_id FROM flight_passengers WHERE flight_id = $1"
 )
 
 func (p *PostgresDatabase) GetPassengersForUser(ctx context.Context, user model.UserId) ([]model.Passenger, error) {
@@ -124,4 +125,36 @@ func (p *PostgresDatabase) GetFlightsAsPassenger(ctx context.Context, passenger 
 	}
 
 	return flights, nil
+}
+
+func (p *PostgresDatabase) GetPassengersForFlightUser(ctx context.Context, flight model.FlightId, user model.UserId) ([]model.UserId, error) {
+	const flightDetailsSql string = "SELECT user_id FROM flights WHERE id = $1"
+	// Verify flight user allowed
+	vQ := p.db.QueryRow(ctx, flightDetailsSql, flight)
+	var fetchedId model.UserId
+	vQScanErr := vQ.Scan(&fetchedId)
+	if vQScanErr != nil {
+		return nil, vQScanErr
+	}
+
+	if fetchedId != user {
+		return nil, fmt.Errorf("user and flight owner must match")
+	}
+
+	// Get passengers
+	passengerListQ, plqErr := p.db.Query(ctx, getPassengersForFlightUser, flight)
+	if plqErr != nil {
+		return nil, plqErr
+	}
+	var passengerList []model.UserId
+	for passengerListQ.Next() {
+		var newPassenger model.UserId
+		sErr := passengerListQ.Scan(&newPassenger)
+		if sErr != nil {
+			return nil, sErr
+		}
+		passengerList = append(passengerList, newPassenger)
+	}
+
+	return passengerList, nil
 }
