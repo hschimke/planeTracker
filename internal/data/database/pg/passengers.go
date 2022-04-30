@@ -14,7 +14,7 @@ const (
 	setDefaultPassengerStatusSql string = "UPDATE passengers SET default_passenger = $3 WHERE user_id = $1 AND passenger_id = $2"
 	addPassengerToFlightSql      string = "INSERT INTO flight_passengers (flight_id, passenger_id) VALUES ($1, $2)"
 	removePassengerFromFlightSql string = "DELETE FROM flight_passengers WHERE flight_id = $1 AND passenger_id = $2"
-	getFlightsAsPassengerSql     string = "SELECT id, origin, destination, tail, flight_date, added FROM flights WHERE id IN (SELECT flight_id FROM flight_passengers WHERE passenger_id = $1)"
+	getFlightsAsPassengerSql     string = "SELECT id, origin, destination, tail, flight_date, added, count(passenger_id) as cidc FROM flights LEFT JOIN flight_passengers ON flights.id = flight_passengers.flight_id WHERE id IN (SELECT flight_id FROM flight_passengers WHERE passenger_id = $1) GROUP BY id"
 	getPassengersForFlightUser   string = "SELECT passenger_id FROM flight_passengers WHERE flight_id = $1"
 )
 
@@ -117,7 +117,7 @@ func (p *PostgresDatabase) GetFlightsAsPassenger(ctx context.Context, passenger 
 	var flights []model.Flight
 	for flightList.Next() {
 		var flight model.Flight
-		sErr := flightList.Scan(&flight.Id, &flight.Origin, &flight.Destination, &flight.TailNumber, &flight.Date, &flight.DateAdded)
+		sErr := flightList.Scan(&flight.Id, &flight.Origin, &flight.Destination, &flight.TailNumber, &flight.Date, &flight.DateAdded, &flight.PassengerCount)
 		if sErr != nil {
 			return nil, sErr
 		}
@@ -137,16 +137,14 @@ func (p *PostgresDatabase) GetPassengersForFlightUser(ctx context.Context, fligh
 		return nil, vQScanErr
 	}
 
-	if fetchedId != user {
-		return nil, fmt.Errorf("user and flight owner must match")
-	}
-
 	// Get passengers
 	passengerListQ, plqErr := p.db.Query(ctx, getPassengersForFlightUser, flight)
 	if plqErr != nil {
 		return nil, plqErr
 	}
-	var passengerList []model.UserId
+
+	foundUserAsPassenger := false
+	passengerList := make([]model.UserId, 0)
 	for passengerListQ.Next() {
 		var newPassenger model.UserId
 		sErr := passengerListQ.Scan(&newPassenger)
@@ -154,6 +152,13 @@ func (p *PostgresDatabase) GetPassengersForFlightUser(ctx context.Context, fligh
 			return nil, sErr
 		}
 		passengerList = append(passengerList, newPassenger)
+		if newPassenger == user {
+			foundUserAsPassenger = true
+		}
+	}
+
+	if (fetchedId != user) && (!foundUserAsPassenger) {
+		return nil, fmt.Errorf("user and flight owner must match, or user must be a passenger on flight")
 	}
 
 	return passengerList, nil

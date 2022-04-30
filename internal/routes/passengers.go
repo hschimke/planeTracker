@@ -247,12 +247,13 @@ func (s *Server) GetFlightsAsPassenger(w http.ResponseWriter, r *http.Request) {
 	response.Flights = make([]Flight, 0, len(flights))
 	for _, flight := range flights {
 		response.Flights = append(response.Flights, Flight{
-			Id:          flight.Id,
-			Origin:      flight.Origin.ToIATA(),
-			Destination: flight.Destination.ToIATA(),
-			TailNumber:  flight.TailNumber,
-			Date:        flight.Date.Format("2006-01-02"),
-			Email:       flight.FlightUser,
+			Id:             flight.Id,
+			Origin:         flight.Origin.ToIATA(),
+			Destination:    flight.Destination.ToIATA(),
+			TailNumber:     flight.TailNumber,
+			Date:           flight.Date.Format("2006-01-02"),
+			Email:          flight.FlightUser,
+			PassengerCount: flight.PassengerCount,
 		})
 	}
 
