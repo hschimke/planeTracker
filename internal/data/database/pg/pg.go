@@ -14,10 +14,11 @@ import (
 
 // SQL commands for CRUD operations
 const (
-	getUserFlightsSql string = "SELECT id, origin, destination, tail, flight_date, added, count(passenger_id) as cidc FROM flights LEFT JOIN flight_passengers ON flights.id = flight_passengers.flight_id WHERE user_id = $1 GROUP BY id ORDER BY flight_date DESC, added DESC"
-	addFlightSql      string = "INSERT INTO flights(id, origin, destination, tail, flight_date, user_id, added) VALUES($1,$2,$3,$4,$5,$6,$7)"
-	updateFlightSql   string = "UPDATE flights SET user_id = $2, origin = $3, destination = $4, tail = $5, flight_date = $6 WHERE id = $1"
-	deleteFlightSql   string = "DELETE FROM flights WHERE id = $1"
+	getUserFlightsSql  string = "SELECT id, origin, destination, tail, flight_date, added, count(passenger_id) as cidc FROM flights LEFT JOIN flight_passengers ON flights.id = flight_passengers.flight_id WHERE user_id = $1 GROUP BY id ORDER BY flight_date DESC, added DESC"
+	addFlightSql       string = "INSERT INTO flights(id, origin, destination, tail, flight_date, user_id, added) VALUES($1,$2,$3,$4,$5,$6,$7)"
+	updateFlightSql    string = "UPDATE flights SET user_id = $2, origin = $3, destination = $4, tail = $5, flight_date = $6 WHERE id = $1"
+	deleteFlightSql    string = "DELETE FROM flights WHERE id = $1"
+	getFlightDetailSql string = "SELECT origin, destination, tail, flight_date, added, user_id, count(passenger_id) as cidc FROM flights LEFT JOIN flight_passengers ON flights.id = flight_passengers.flight_id WHERE id = $1 GROUP BY id"
 )
 
 // SQL commands to fetch plane details
@@ -170,6 +171,25 @@ func (p *PostgresDatabase) GetTailDetails(ctx context.Context, tail model.PlaneT
 	}
 
 	return returnData, nil
+}
+
+// getFlightDetailSql string = "SELECT origin, destination, tail, flight_date, added, user_id FROM flights WHERE id = $1"
+func (p *PostgresDatabase) GetFilghtDetail(ctx context.Context, user model.UserId, flight_id model.FlightId) (model.Flight, error) {
+	query := p.db.QueryRow(ctx, getFlightDetailSql, flight_id)
+
+	var flight model.Flight
+	scanErr := query.Scan(&flight.Origin, &flight.Destination, &flight.TailNumber, &flight.Date, &flight.DateAdded, &flight.FlightUser, &flight.PassengerCount)
+	if scanErr != nil {
+		return model.Flight{}, scanErr
+	}
+
+	if flight.FlightUser != user {
+		return model.Flight{}, fmt.Errorf("flight user and api user must match")
+	}
+
+	flight.Id = flight_id
+
+	return flight, nil
 }
 
 func NewPostgresDatabase(connectionString string) *PostgresDatabase {

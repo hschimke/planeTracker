@@ -353,3 +353,45 @@ func (s *Server) GetPlaneDetail(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(response)
 }
+
+type getFlightDetailRequest struct {
+	UserId   model.UserId   `json:"user_id"`
+	FlightId model.FlightId `json:"flight_id"`
+}
+type getFlightDetailResponse Flight
+
+func (s *Server) GetFlightDetail(w http.ResponseWriter, r *http.Request) {
+	email := getAuthedEmail(r.Context())
+
+	var flight_request getFlightDetailRequest
+
+	decodeErr := json.NewDecoder(r.Body).Decode(&flight_request)
+	if decodeErr != nil {
+		http.Error(w, decodeErr.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if flight_request.UserId != email {
+		http.Error(w, "unauthed email used", http.StatusUnauthorized)
+		return
+	}
+
+	flight, getErr := s.db.GetFilghtDetail(r.Context(), email, flight_request.FlightId)
+	if getErr != nil {
+		http.Error(w, getErr.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	returnFlight := getFlightDetailResponse{
+		Id:             flight.Id,
+		Origin:         flight.Origin.ToIATA(),
+		Destination:    flight.Destination.ToIATA(),
+		Date:           flight.Date.Format("2006-01-02"),
+		TailNumber:     flight.TailNumber,
+		Email:          email,
+		PassengerCount: flight.PassengerCount,
+	}
+
+	w.Header().Add("ContentType", "application/json")
+	json.NewEncoder(w).Encode(&returnFlight)
+}

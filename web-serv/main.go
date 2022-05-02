@@ -30,6 +30,7 @@ func main() {
 	router.Handle(apiString+"updateFlight", authRequiredMW(http.HandlerFunc(routerMap.UpdateFlight)))
 	router.Handle(apiString+"bulkAddFlights", authRequiredMW(http.HandlerFunc(routerMap.BulkAddFlights)))
 	router.Handle(apiString+"getPlaneDetails", authRequiredMW(http.HandlerFunc(routerMap.GetPlaneDetail)))
+	router.Handle(apiString+"getFlightDetail", authRequiredMW(http.HandlerFunc(routerMap.GetFlightDetail)))
 
 	// Passenger Features
 	router.Handle(apiString+"getPassengersForUser", authRequiredMW(http.HandlerFunc(routerMap.GetPassengersForUser)))
