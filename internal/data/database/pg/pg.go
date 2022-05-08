@@ -23,8 +23,9 @@ const (
 
 // SQL commands to fetch plane details
 const (
-	getPlaneFlightsForUserSql string = "SELECT id, origin, destination, tail, flight_date, added FROM flights WHERE user_id = $1 AND tail = $2 ORDER BY flight_date DESC, added DESC"
-	getPlaneRoutesSql         string = "SELECT origin, destination, count(*) AS total FROM flights WHERE user_id = $1 AND tail = $2 GROUP BY origin, destination"
+	getPlaneFlightsForUserSql string = "SELECT id, origin, destination, tail, flight_date, added FROM flights LEFT JOIN flight_passengers ON flight_passengers.flight_id = flights.id WHERE tail = $2 AND (user_id = $1 OR passenger_id = $1) ORDER BY flight_date DESC, added DESC"
+	//getPlaneFlightsForPassengerSql string = "SELECT id, origin, destination, tail, flight_date, added FROM flights WHERE tail = $2 AND user_id IN (SELECT passenger_id FROM flight_passengers WHERE flight_passengers.flight_id = id AND passenger_id = $2)"
+	getPlaneRoutesSql string = "SELECT origin, destination, count(*) AS total FROM flights LEFT JOIN flight_passengers ON flight_passengers.flight_id = flights.id WHERE (user_id = $1 OR passenger_id = $1) AND tail = $2 GROUP BY origin, destination"
 )
 
 // SQL commands to create tables and indexes (will be executed when NewPostgresDatabase() is called
