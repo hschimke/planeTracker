@@ -42,6 +42,11 @@ func main() {
 	router.Handle(apiString+"getFlightsAsPassenger", authRequiredMW(http.HandlerFunc(routerMap.GetFlightsAsPassenger)))
 	router.Handle(apiString+"getPassengersForFlight", authRequiredMW(http.HandlerFunc(routerMap.GetPassengersForFlight)))
 
+	// Healthcheck
+	router.Handle("healthcheck", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("OK"))
+	}))
+
 	address := fmt.Sprintf(":%s", serverPort)
 
 	server := &http.Server{

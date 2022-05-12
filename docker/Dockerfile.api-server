@@ -11,10 +11,13 @@ COPY web-serv/ ./web-serv
 RUN go build -o ./web_server -v ./web-serv/
 
 FROM alpine:latest
+RUN apk --no-cache add curl
 WORKDIR /app
 ARG GIT_VERSION
 ENV DOCKERIZED=true VERSION_HASH=${GIT_VERSION}
 COPY --from=server-build /app-build/web_server /app/web_server
 EXPOSE 8080
+HEALTHCHECK --interval=1m --timeout=3s \
+  CMD curl -f http://localhost:8080/healthcheck || exit 1
 
 CMD ["/app/web_server"]
