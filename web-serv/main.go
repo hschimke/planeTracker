@@ -43,7 +43,7 @@ func main() {
 	router.Handle(apiString+"getPassengersForFlight", authRequiredMW(http.HandlerFunc(routerMap.GetPassengersForFlight)))
 
 	// Healthcheck
-	router.Handle("healthcheck", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	router.Handle("/healthcheck", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))
 	}))
 
