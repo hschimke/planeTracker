@@ -15,7 +15,7 @@ func authGoogleToken(ctx context.Context, tokenString string, audience string) (
 	if validateErr != nil {
 		return "", validateErr
 	}
-	if token.Claims["email_verified"].(bool) != true {
+	if !token.Claims["email_verified"].(bool) {
 		return "", fmt.Errorf("unverified email")
 	}
 	return token.Claims["email"].(string), nil
