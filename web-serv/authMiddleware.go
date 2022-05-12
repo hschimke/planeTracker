@@ -10,8 +10,6 @@ import (
 	"google.golang.org/api/idtoken"
 )
 
-type contextKVM string
-
 func authGoogleToken(ctx context.Context, tokenString string, audience string) (string, error) {
 	token, validateErr := idtoken.Validate(ctx, tokenString, audience)
 	if validateErr != nil {
@@ -48,7 +46,7 @@ func authRequiredMW(next http.Handler) http.Handler {
 
 		switch authTypeRequest {
 		case "fake":
-			ctx = context.WithValue(r.Context(), contextKVM("email"), contextKVM("fake@fake.fake"))
+			ctx = context.WithValue(r.Context(), "email", "fake@fake.fake")
 		case "google":
 			// TODO add audience
 			email, authErr := authGoogleToken(r.Context(), authHeader[1], os.Getenv("GOOGLE_CLIENT_ID"))
@@ -56,7 +54,7 @@ func authRequiredMW(next http.Handler) http.Handler {
 				http.Error(w, "google auth failed, token appears fake", http.StatusUnauthorized)
 				return
 			}
-			ctx = context.WithValue(r.Context(), contextKVM("email"), contextKVM(email))
+			ctx = context.WithValue(r.Context(), "email", email)
 		case "microsoft":
 			// TODO validate microsoft token
 			http.Error(w, "microsoft jwt not supported", http.StatusUnauthorized)
