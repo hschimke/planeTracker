@@ -17,7 +17,7 @@ ARG GIT_VERSION
 ENV DOCKERIZED=true VERSION_HASH=${GIT_VERSION}
 COPY --from=server-build /app-build/web_server /app/web_server
 EXPOSE 8080
-HEALTHCHECK --interval=23m --timeout=3s \
+HEALTHCHECK --interval=23s --timeout=3s \
   CMD curl -f http://localhost:8080/healthcheck || exit 1
 
 CMD ["/app/web_server"]
