@@ -14,7 +14,7 @@ const (
 	setDefaultPassengerStatusSql string = "UPDATE passengers SET default_passenger = $3 WHERE user_id = $1 AND passenger_id = $2"
 	addPassengerToFlightSql      string = "INSERT INTO flight_passengers (flight_id, passenger_id) VALUES ($1, $2)"
 	removePassengerFromFlightSql string = "DELETE FROM flight_passengers WHERE flight_id = $1 AND passenger_id = $2"
-	getFlightsAsPassengerSql     string = "SELECT id, origin, destination, tail, flight_date, added, count(passenger_id) as cidc FROM flights LEFT JOIN flight_passengers ON flights.id = flight_passengers.flight_id WHERE id IN (SELECT flight_id FROM flight_passengers WHERE passenger_id = $1) GROUP BY id"
+	getFlightsAsPassengerSql     string = "SELECT id, origin, destination, tail, flight_date, added, count(passenger_id) as cidc FROM flights LEFT JOIN flight_passengers ON flights.id = flight_passengers.flight_id WHERE id IN (SELECT flight_id FROM flight_passengers WHERE passenger_id = $1) GROUP BY id ORDER BY flight_date DESC, added DESC"
 	getPassengersForFlightUser   string = "SELECT passenger_id FROM flight_passengers WHERE flight_id = $1"
 )
 
